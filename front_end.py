@@ -3,7 +3,9 @@ import pandas as pd
 import pika
 import requests
 import json
-from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, accuracy_score, precision_score, f1_score, recall_score, RocCurveDisplay
+from sklearn.metrics import mean_squared_error, r2_score, root_mean_squared_error
+import matplotlib.pyplot as plt
+import numpy as np
 
 
 host = "localhost"
@@ -36,31 +38,38 @@ if upload is not None:
     resp = requests.get(url + "/predict/Pe").json()
 
     data = pd.DataFrame.from_dict(json.loads(resp))
+    st.write("<h2 style='font-size: 28px;'>Sample data:</h2>", unsafe_allow_html=True)
     st.table(data.head(3))
 
-   #%% SCores
-    col1, col2, col3, col4 = st.columns(4)
+# metrics
+    st.write("<h2 style='font-size: 28px;'>Metrics:</h2>", unsafe_allow_html=True)
+    col1, col2, col3 = st.columns(3)
 
     with col1:
         with st.container(border=True):
-            st.write("Precision")
-            st.write(precision_score(data["PE"], data["y_pred"], average='micro'))
+            st.write("MSE")
+            st.write(mean_squared_error(data["PE"], data["y_pred"]))
 
     with col2:
         with st.container(border=True):
-            st.write("Accuracy")
-            st.write(accuracy_score(data["PE"], data["y_pred"]))
+            st.write("RMSE")
+            st.write(root_mean_squared_error(data["PE"], data["y_pred"]))
 
     with col3:
         with st.container(border=True):
-            st.write("F1 Score")
-            st.write(f1_score(data["PE"], data["y_pred"], average='micro'))
+            st.write("R2")
+            st.write(r2_score(data["PE"], data["y_pred"]))
 
-    with col4:  
-        with st.container(border=True):
-            st.write("Recall")
-            st.write(recall_score(data["PE"], data["y_pred"],average='micro'))
 
-     #%% figures - heatmap
-    st.pyplot(ConfusionMatrixDisplay.from_predictions(data["PE"], data["y_pred"]).figure_)
+# actual vs pred
+    st.write("<h2 style='font-size: 28px;'>Actual vs Predicted Pe using kNN Regression (100 Instances)</h2>", unsafe_allow_html=True)
+    plt.figure(figsize=(15, 6))
+    plt.ylim(400, 510)
+    plt.grid(axis='y')
+    plt.plot(np.arange(0, 100, 1), data["PE"][0:100], label="Actual")
+    plt.plot(np.arange(0, 100, 1), data["y_pred"][0:100], label="Predicted")
+    plt.xlabel('Instances')
+    plt.ylabel('PE')
+    plt.legend()
+    st.pyplot(plt)
 
